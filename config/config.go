@@ -108,11 +108,18 @@ func (p *PoolConfig) CreateJsonPatchSet() (patches []k8s.JsonPatch) {
 	patches = []k8s.JsonPatch{}
 
 	if p.Node.Role != nil {
-		name := "kubernetes.io/role"
+		label := "kubernetes.io/role"
 		patches = append(patches, k8s.JsonPatchString{
 			Op:    "replace",
-			Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(name)),
+			Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(label)),
 			Value: *p.Node.Role,
+		})
+
+		label = fmt.Sprintf("node-role.kubernetes.io/%s", *p.Node.Role)
+		patches = append(patches, k8s.JsonPatchString{
+			Op:    "replace",
+			Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(label)),
+			Value: "",
 		})
 	}
 
