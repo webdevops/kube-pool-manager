@@ -72,3 +72,25 @@ func Test_NodeRegexp(t *testing.T) {
 		t.Error("Expected not matching, but matching node")
 	}
 }
+
+
+func Test_NodeLabelMatcher(t *testing.T) {
+	node := buildNode()
+
+	pool := PoolConfig{
+		Name: "testing",
+		Selector: []PoolConfigSelector{
+			{
+				Path:  "{.metadata.labels.node\\.kubernetes\\.io/role}",
+				Match: stringPtr("worker"),
+			},
+		},
+	}
+	matching, err := pool.IsMatchingNode(node)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if !matching {
+		t.Error("Expected matching, but not matching node")
+	}
+}
