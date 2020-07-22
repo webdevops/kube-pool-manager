@@ -23,7 +23,7 @@ spec:
       serviceAccountName: kube-pool-manager
       containers:
         - name: kube-pool-manager
-          image: webdevops/kube-pool-manager:development
+          image: webdevops/kube-pool-manager:latest
           imagePullPolicy: Always
           env:
             - name: CONFIG
