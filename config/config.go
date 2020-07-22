@@ -24,6 +24,7 @@ type (
 
 	PoolConfigSelector struct {
 		Path   string  `yaml:"path"`
+		jsonPath *jsonpath.JSONPath
 		Match  *string `yaml:"match"`
 		Regexp *string `yaml:"regexp"`
 		regexp *regexp.Regexp
@@ -49,17 +50,21 @@ func (p *PoolConfig) IsMatchingNode(node *corev1.Node) (bool, error) {
 	for num, selector := range p.Selector {
 		// auto compile regexp
 		if selector.Regexp != nil {
-			p.Selector[num].regexp = regexp.MustCompile(*selector.Regexp)
-			selector.regexp = p.Selector[num].regexp
+			selector.regexp = regexp.MustCompile(*selector.Regexp)
+			p.Selector[num].regexp = selector.regexp
 		}
 
-		jpath := jsonpath.New(p.Name)
-		jpath.AllowMissingKeys(true)
-		if err := jpath.Parse(selector.Path); err != nil {
-			return false, err
+		// auto compile json path
+		if selector.jsonPath == nil {
+			selector.jsonPath = jsonpath.New(p.Name)
+			selector.jsonPath.AllowMissingKeys(true)
+			if err := selector.jsonPath.Parse(selector.Path); err != nil {
+				return false, err
+			}
+			p.Selector[num].jsonPath = selector.jsonPath
 		}
 
-		values, err := jpath.FindResults(node)
+		values, err := selector.jsonPath.FindResults(node)
 		if err != nil {
 			return false, err
 		}
