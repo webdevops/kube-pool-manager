@@ -1,4 +1,22 @@
 pools:
+- pool: linux
+  continue: true
+  selector:
+    - path: "{.metadata.labels.kubernetes\\.io/os}"
+      match: "linux"
+  node:
+    # sets the kubernetes node role
+    role: linux
+
+- pool: windows
+  continue: true
+  selector:
+    - path: "{.metadata.labels.kubernetes\\.io/os}"
+      match: "windows"
+  node:
+    # sets the kubernetes node role
+    role: windows
+
 - pool: agents
   selector:
     - path: "{.spec.providerID}"
@@ -48,4 +66,3 @@ pools:
     # node annotations
     annotations:
       webdevops.io/testing: 3
-
