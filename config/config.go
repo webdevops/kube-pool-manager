@@ -23,11 +23,11 @@ type (
 	}
 
 	PoolConfigSelector struct {
-		Path   string  `yaml:"path"`
+		Path     string `yaml:"path"`
 		jsonPath *jsonpath.JSONPath
-		Match  *string `yaml:"match"`
-		Regexp *string `yaml:"regexp"`
-		regexp *regexp.Regexp
+		Match    *string `yaml:"match"`
+		Regexp   *string `yaml:"regexp"`
+		regexp   *regexp.Regexp
 	}
 
 	PoolConfigNode struct {

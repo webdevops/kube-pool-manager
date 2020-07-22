@@ -73,7 +73,6 @@ func Test_NodeRegexp(t *testing.T) {
 	}
 }
 
-
 func Test_NodeLabelMatcher(t *testing.T) {
 	node := buildNode()
 
