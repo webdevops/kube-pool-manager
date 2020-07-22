@@ -1,0 +1,51 @@
+pools:
+- pool: agents
+  selector:
+    - path: "{.spec.providerID}"
+      # simple match
+      match: "azure:///subscriptions/d86bcf13-ddf7-45ea-82f1-6f656767a318/resourceGroups/mc_k8s_mblaschke_westeurope/providers/Microsoft.Compute/virtualMachineScaleSets/aks-agents-35471996-vmss/virtualMachines/30"
+  node:
+    # sets the kubernetes node role
+    role: testing
+
+    # dynamic kubelet configuration
+    # see https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
+    #configSource:
+    #  configMap:
+    #    name: kubelet-config
+    #    namespace: kube-system
+    #    kubeletConfigKey: kubelet
+
+    # node labels
+    labels:
+        webdevops.io/testing: "true"
+
+    # node annotations
+    annotations:
+        webdevops.io/testing: 2
+
+- pool: agents-regexp
+  selector:
+    - path: "{.spec.providerID}"
+      # regexp match
+      regexp: "^.+virtualMachineScaleSets\\/aks-agents-35471996-vmss\\/.+$"
+  node:
+    # sets the kubernetes node role
+    role: testing
+
+    # dynamic kubelet configuration
+    # see https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
+    #configSource:
+    #  configMap:
+    #    name: kubelet-config
+    #    namespace: kube-system
+    #    kubeletConfigKey: kubelet
+
+    # node labels
+    labels:
+      webdevops.io/testing: "regexp"
+
+    # node annotations
+    annotations:
+      webdevops.io/testing: 3
+
