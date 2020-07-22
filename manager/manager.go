@@ -141,6 +141,11 @@ func (m *KubePoolManager) applyNode(node *corev1.Node) {
 			}
 
 			m.prometheus.nodeApplied.WithLabelValues(node.Name).Set(1)
+
+			// check if this more pool configurations should be applied
+			if !poolConfig.Continue {
+				break
+			}
 		} else {
 			contextLogger.Debugf("Node NOT matches pool configuration \"%s\"", poolConfig.Name)
 		}

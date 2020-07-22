@@ -17,6 +17,7 @@ type (
 
 	PoolConfig struct {
 		Name     string               `yaml:"pool"`
+		Continue bool                 `yaml:"continue"`
 		Selector []PoolConfigSelector `yaml:"selector"`
 		Node     PoolConfigNode       `yaml:"node"`
 	}
