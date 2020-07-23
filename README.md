@@ -43,7 +43,8 @@ Metrics
 
 | Metric                         | Description                                     |
 |:-------------------------------|:------------------------------------------------|
-| `poolmanager_node_applied`     | Status if node config was applied               |
+| `poolmanager_node_pool_status` | Status which pool to which node was applied     |
+| `poolmanager_node_applied`     | Timestamp when node confg was set               |
 
 Kubernetes deployment
 ---------------------

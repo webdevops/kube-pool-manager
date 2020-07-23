@@ -26,6 +26,7 @@ type (
 		k8sClient *kubernetes.Clientset
 
 		prometheus struct {
+			nodePoolStatus *prometheus.GaugeVec
 			nodeApplied *prometheus.GaugeVec
 		}
 	}
@@ -38,10 +39,19 @@ func (m *KubePoolManager) Init() {
 }
 
 func (r *KubePoolManager) initPrometheus() {
+	r.prometheus.nodePoolStatus = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "poolmanager_node_pool_status",
+			Help: "kube-pool-manager node pool config status",
+		},
+		[]string{"nodeName", "pool"},
+	)
+	prometheus.MustRegister(r.prometheus.nodePoolStatus)
+
 	r.prometheus.nodeApplied = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "poolmanager_node_applied",
-			Help: "kube-pool-manager node status",
+			Help: "kube-pool-manager node applied time",
 		},
 		[]string{"nodeName"},
 	)
@@ -97,9 +107,9 @@ func (m *KubePoolManager) startWatch() {
 func (m *KubePoolManager) applyNode(node *corev1.Node) {
 	contextLogger := log.WithField("node", node.Name)
 
-	m.prometheus.nodeApplied.WithLabelValues(node.Name).Set(0)
 
 	for _, poolConfig := range m.Config.Pools {
+		m.prometheus.nodePoolStatus.WithLabelValues(node.Name, poolConfig.Name).Set(0)
 		poolLogger := contextLogger.WithField("pool", poolConfig.Name)
 		matching, err := poolConfig.IsMatchingNode(node)
 		if err != nil {
@@ -128,7 +138,8 @@ func (m *KubePoolManager) applyNode(node *corev1.Node) {
 				poolLogger.Infof("Not applying pool config, dry-run active")
 			}
 
-			m.prometheus.nodeApplied.WithLabelValues(node.Name).Set(1)
+			m.prometheus.nodePoolStatus.WithLabelValues(node.Name, poolConfig.Name).Set(1)
+			m.prometheus.nodeApplied.WithLabelValues(node.Name).SetToCurrentTime()
 
 			// check if this more pool configurations should be applied
 			if !poolConfig.Continue {
