@@ -11,7 +11,7 @@ data:
           - path: "{.spec.providerID}"
             regexp: "^.+virtualMachineScaleSets\\/aks-agents-35471996-vmss\\/.+$"
         node:
-          role: agents
+          roles: [agents]
           #configSource:
           #  configMap:
           #    name: kubelet-config

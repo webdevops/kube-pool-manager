@@ -94,38 +94,26 @@ func (m *KubePoolManager) startWatch() {
 	}()
 }
 
-func (m *KubePoolManager) applyToAll() error {
-	result, err := m.k8sClient.CoreV1().Nodes().List(m.ctx, metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	for _, node := range result.Items {
-		m.applyNode(&node)
-	}
-
-	return nil
-}
-
 func (m *KubePoolManager) applyNode(node *corev1.Node) {
 	contextLogger := log.WithField("node", node.Name)
 
 	m.prometheus.nodeApplied.WithLabelValues(node.Name).Set(0)
 
 	for _, poolConfig := range m.Config.Pools {
+		poolLogger := contextLogger.WithField("pool", poolConfig.Name)
 		matching, err := poolConfig.IsMatchingNode(node)
 		if err != nil {
 			log.Panic(err)
 		}
 
 		if matching {
-			contextLogger.Infof("Node \"%s\" matches pool configuration \"%s\", applying pool config", node.Name, poolConfig.Name)
+			poolLogger.Infof("applying pool \"%s\" to node \"%s\"", poolConfig.Name, node.Name)
 
 			// create json patch
 			patchSet := poolConfig.CreateJsonPatchSet()
 			patchBytes, patchErr := json.Marshal(patchSet)
 			if patchErr != nil {
-				contextLogger.Errorf("failed to create json patch: %v", err)
+				poolLogger.Errorf("failed to create json patch: %v", err)
 				return
 			}
 
@@ -133,11 +121,11 @@ func (m *KubePoolManager) applyNode(node *corev1.Node) {
 				// patch node
 				_, k8sError := m.k8sClient.CoreV1().Nodes().Patch(m.ctx, node.Name, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
 				if k8sError != nil {
-					contextLogger.Errorf("failed to apply json patch: %v", k8sError)
+					poolLogger.Errorf("failed to apply json patch: %v", k8sError)
 					return
 				}
 			} else {
-				contextLogger.Infof("Not applying pool config, dry-run active")
+				poolLogger.Infof("Not applying pool config, dry-run active")
 			}
 
 			m.prometheus.nodeApplied.WithLabelValues(node.Name).Set(1)
@@ -147,7 +135,7 @@ func (m *KubePoolManager) applyNode(node *corev1.Node) {
 				break
 			}
 		} else {
-			contextLogger.Debugf("Node NOT matches pool configuration \"%s\"", poolConfig.Name)
+			poolLogger.Debugf("Node NOT matches pool configuration \"%s\"", poolConfig.Name)
 		}
 	}
 }

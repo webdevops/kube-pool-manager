@@ -31,7 +31,7 @@ type (
 	}
 
 	PoolConfigNode struct {
-		Role         *string                     `yaml:"role"`
+		Roles        *[]string                   `yaml:"roles"`
 		ConfigSource *PoolConfigNodeConfigSource `yaml:"configSource"`
 		Labels       *map[string]string          `yaml:"labels"`
 		Annotations  *map[string]string          `yaml:"annotations"`
@@ -107,20 +107,15 @@ func (p *PoolConfig) IsMatchingNode(node *corev1.Node) (bool, error) {
 func (p *PoolConfig) CreateJsonPatchSet() (patches []k8s.JsonPatch) {
 	patches = []k8s.JsonPatch{}
 
-	if p.Node.Role != nil {
-		label := "kubernetes.io/role"
-		patches = append(patches, k8s.JsonPatchString{
-			Op:    "replace",
-			Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(label)),
-			Value: *p.Node.Role,
-		})
-
-		label = fmt.Sprintf("node-role.kubernetes.io/%s", *p.Node.Role)
-		patches = append(patches, k8s.JsonPatchString{
-			Op:    "replace",
-			Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(label)),
-			Value: "",
-		})
+	if p.Node.Roles != nil {
+		for _, role := range *p.Node.Roles {
+			label := fmt.Sprintf("node-role.kubernetes.io/%s", role)
+			patches = append(patches, k8s.JsonPatchString{
+				Op:    "replace",
+				Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(label)),
+				Value: "",
+			})
+		}
 	}
 
 	if p.Node.ConfigSource != nil {

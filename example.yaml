@@ -6,7 +6,7 @@ pools:
       match: "linux"
   node:
     # sets the kubernetes node role
-    role: linux
+    roles: [linux]
 
 - pool: windows
   continue: true
@@ -15,7 +15,7 @@ pools:
       match: "windows"
   node:
     # sets the kubernetes node role
-    role: windows
+    role: [windows]
 
 - pool: agents
   selector:
@@ -24,7 +24,7 @@ pools:
       match: "azure:///subscriptions/d86bcf13-ddf7-45ea-82f1-6f656767a318/resourceGroups/mc_k8s_mblaschke_westeurope/providers/Microsoft.Compute/virtualMachineScaleSets/aks-agents-35471996-vmss/virtualMachines/30"
   node:
     # sets the kubernetes node role
-    role: testing
+    roles: [agent,foobar]
 
     # dynamic kubelet configuration
     # see https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
@@ -49,7 +49,7 @@ pools:
       regexp: "^.+virtualMachineScaleSets\\/aks-agents-35471996-vmss\\/.+$"
   node:
     # sets the kubernetes node role
-    role: testing
+    roles: [agent,regexp]
 
     # dynamic kubelet configuration
     # see https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
