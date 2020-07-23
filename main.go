@@ -99,14 +99,14 @@ func parseAppConfig(path string) (conf config.Config) {
 
 	conf = config.Config{}
 
-	log.Infof("reading configuration from file %v", path)
+	log.WithField("path", path).Infof("reading configuration from file %v", path)
 	if data, err := ioutil.ReadFile(path); err == nil {
 		configRaw = data
 	} else {
 		panic(err)
 	}
 
-	log.Info("parsing configuration")
+	log.WithField("path", path).Info("parsing configuration")
 	if err := yaml.Unmarshal(configRaw, &conf); err != nil {
 		panic(err)
 	}
