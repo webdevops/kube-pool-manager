@@ -3,18 +3,19 @@ package manager
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/kube-pool-manager/config"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
-	"strings"
 )
 
 type (
@@ -27,7 +28,7 @@ type (
 
 		prometheus struct {
 			nodePoolStatus *prometheus.GaugeVec
-			nodeApplied *prometheus.GaugeVec
+			nodeApplied    *prometheus.GaugeVec
 		}
 	}
 )
@@ -83,30 +84,45 @@ func (r *KubePoolManager) initK8s() {
 }
 
 func (m *KubePoolManager) Start() {
-	m.startWatch()
-}
-
-func (m *KubePoolManager) startWatch() {
-	watch, err := m.k8sClient.CoreV1().Nodes().Watch(m.ctx, metav1.ListOptions{Watch: true})
-	if err != nil {
-		log.Panic(err)
-	}
-
 	go func() {
-		for res := range watch.ResultChan() {
-			switch strings.ToLower(string(res.Type)) {
-			case "added":
-				if node, ok := res.Object.(*corev1.Node); ok {
-					m.applyNode(node)
-				}
+		for {
+			log.Info("(re)starting node watch")
+			if err := m.startNodeWatch(); err != nil {
+				log.Errorf("node watcher stopped: %v", err)
 			}
 		}
 	}()
 }
 
+func (m *KubePoolManager) startNodeWatch() error {
+	timeout := int64(m.Opts.K8s.WatchTimeout.Seconds())
+	watchOpts := metav1.ListOptions{
+		LabelSelector:  m.Opts.K8s.NodeLabelSelector,
+		TimeoutSeconds: &timeout,
+		Watch:          true,
+	}
+	nodeWatcher, err := m.k8sClient.CoreV1().Nodes().Watch(m.ctx, watchOpts)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer nodeWatcher.Stop()
+
+	for res := range nodeWatcher.ResultChan() {
+		switch res.Type {
+		case watch.Added:
+			if node, ok := res.Object.(*corev1.Node); ok {
+				m.applyNode(node)
+			}
+		case watch.Error:
+			log.Errorf("go watch error event %v", res.Object)
+		}
+	}
+
+	return fmt.Errorf("terminated")
+}
+
 func (m *KubePoolManager) applyNode(node *corev1.Node) {
 	contextLogger := log.WithField("node", node.Name)
-
 
 	for _, poolConfig := range m.Config.Pools {
 		m.prometheus.nodePoolStatus.WithLabelValues(node.Name, poolConfig.Name).Set(0)

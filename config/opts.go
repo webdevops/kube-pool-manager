@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 type (
@@ -12,6 +13,11 @@ type (
 			Debug   bool `           long:"debug"        env:"DEBUG"    description:"debug mode"`
 			Verbose bool `short:"v"  long:"verbose"      env:"VERBOSE"  description:"verbose mode"`
 			LogJson bool `           long:"log.json"     env:"LOG_JSON" description:"Switch log output to json format"`
+		}
+
+		K8s struct {
+			NodeLabelSelector string        `long:"kube.node.labelselector"     env:"KUBE_NODE_LABELSELECTOR"     description:"Node Label selector which nodes should be checked"        default:""`
+			WatchTimeout      time.Duration `long:"kube.watch.timeout"          env:"KUBE_WATCH_TIMEOUT"          description:"Timeout & full resync for node watch (time.Duration)"     default:"24h"`
 		}
 
 		// general options

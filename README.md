@@ -23,15 +23,18 @@ Usage:
   kube-pool-manager [OPTIONS]
 
 Application Options:
-      --debug     debug mode [$DEBUG]
-  -v, --verbose   verbose mode [$VERBOSE]
-      --log.json  Switch log output to json format [$LOG_JSON]
-      --dry-run   Dry run (do not apply to nodes) [$DRY_RUN]
-      --config=   Config path [$CONFIG]
-      --bind=     Server address (default: :8080) [$SERVER_BIND]
+      --debug                    debug mode [$DEBUG]
+  -v, --verbose                  verbose mode [$VERBOSE]
+      --log.json                 Switch log output to json format [$LOG_JSON]
+      --kube.node.labelselector= Node Label selector which nodes should be checked [$KUBE_NODE_LABELSELECTOR]
+      --kube.watch.timeout=      Timeout & full resync for node watch (time.Duration) (default: 24h)
+                                 [$KUBE_WATCH_TIMEOUT]
+      --dry-run                  Dry run (do not apply to nodes) [$DRY_RUN]
+      --config=                  Config path [$CONFIG]
+      --bind=                    Server address (default: :8080) [$SERVER_BIND]
 
 Help Options:
-  -h, --help      Show this help message
+  -h, --help                     Show this help message
 ```
 
 see [example.yaml](/example.yaml) for configuration file

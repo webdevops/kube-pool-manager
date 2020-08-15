@@ -94,7 +94,6 @@ func Test_NodeLabelMatcher(t *testing.T) {
 	}
 }
 
-
 func Test_NodeMultipleMatcher(t *testing.T) {
 	node := buildNode()
 
