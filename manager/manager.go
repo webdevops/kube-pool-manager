@@ -152,7 +152,7 @@ func (m *KubePoolManager) applyNode(node *corev1.Node) {
 		poolLogger := contextLogger.WithField("pool", poolConfig.Name)
 		matching, err := poolConfig.IsMatchingNode(node)
 		if err != nil {
-			log.Panic(err)
+			poolLogger.Panic(err)
 		}
 
 		if matching {
