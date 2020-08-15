@@ -2,12 +2,12 @@ package manager
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/kube-pool-manager/config"
+	"github.com/webdevops/kube-pool-manager/k8s"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -147,6 +147,9 @@ func (m *KubePoolManager) startNodeWatch() error {
 func (m *KubePoolManager) applyNode(node *corev1.Node) {
 	contextLogger := log.WithField("node", node.Name)
 
+	nodePatchSets := k8s.NewJsonPatchSet()
+	poolNameList := []string{}
+
 	for _, poolConfig := range m.Config.Pools {
 		m.prometheus.nodePoolStatus.WithLabelValues(node.Name, poolConfig.Name).Set(0)
 		poolLogger := contextLogger.WithField("pool", poolConfig.Name)
@@ -156,36 +159,40 @@ func (m *KubePoolManager) applyNode(node *corev1.Node) {
 		}
 
 		if matching {
-			poolLogger.Infof("applying pool \"%s\" to node \"%s\"", poolConfig.Name, node.Name)
+			poolLogger.Infof("adding configuration from pool \"%s\" to node \"%s\"", poolConfig.Name, node.Name)
 
 			// create json patch
 			patchSet := poolConfig.CreateJsonPatchSet()
-			patchBytes, patchErr := json.Marshal(patchSet)
-			if patchErr != nil {
-				poolLogger.Errorf("failed to create json patch: %v", err)
-				return
-			}
-
-			if !m.Opts.DryRun {
-				// patch node
-				_, k8sError := m.k8sClient.CoreV1().Nodes().Patch(m.ctx, node.Name, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
-				if k8sError != nil {
-					poolLogger.Errorf("failed to apply json patch: %v", k8sError)
-					return
-				}
-			} else {
-				poolLogger.Infof("Not applying pool config, dry-run active")
-			}
-
-			m.prometheus.nodePoolStatus.WithLabelValues(node.Name, poolConfig.Name).Set(1)
-			m.prometheus.nodeApplied.WithLabelValues(node.Name).SetToCurrentTime()
-
-			// check if this more pool configurations should be applied
-			if !poolConfig.Continue {
-				break
-			}
+			nodePatchSets.AddSet(patchSet)
+			poolNameList = append(poolNameList, poolConfig.Name)
 		} else {
-			poolLogger.Debugf("Node NOT matches pool configuration \"%s\"", poolConfig.Name)
+			poolLogger.Debugf("Node NOT matches pool \"%s\"", poolConfig.Name)
 		}
+	}
+
+	// apply patches
+	contextLogger.Infof("applying configuration to node \"%s\"", node.Name)
+
+	patchBytes, patchErr := nodePatchSets.Marshal()
+	if patchErr != nil {
+		contextLogger.Errorf("failed to create json patch: %v", patchErr)
+		return
+	}
+
+	if !m.Opts.DryRun {
+		// patch node
+		_, k8sError := m.k8sClient.CoreV1().Nodes().Patch(m.ctx, node.Name, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
+		if k8sError != nil {
+			contextLogger.Errorf("failed to apply json patch: %v", k8sError)
+			return
+		}
+	} else {
+		contextLogger.Infof("Not applying pool config, dry-run active")
+	}
+
+	// metrics
+	for _, poolName := range poolNameList {
+		m.prometheus.nodePoolStatus.WithLabelValues(node.Name, poolName).Set(1)
+		m.prometheus.nodeApplied.WithLabelValues(node.Name).SetToCurrentTime()
 	}
 }

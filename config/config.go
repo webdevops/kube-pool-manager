@@ -104,13 +104,13 @@ func (p *PoolConfig) IsMatchingNode(node *corev1.Node) (bool, error) {
 	return true, nil
 }
 
-func (p *PoolConfig) CreateJsonPatchSet() (patches []k8s.JsonPatch) {
-	patches = []k8s.JsonPatch{}
+func (p *PoolConfig) CreateJsonPatchSet() (patchSet *k8s.JsonPatchSet) {
+	patchSet = k8s.NewJsonPatchSet()
 
 	if p.Node.Roles != nil {
 		for _, role := range *p.Node.Roles {
 			label := fmt.Sprintf("node-role.kubernetes.io/%s", role)
-			patches = append(patches, k8s.JsonPatchString{
+			patchSet.Add(k8s.JsonPatchString{
 				Op:    "replace",
 				Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(label)),
 				Value: "",
@@ -119,7 +119,7 @@ func (p *PoolConfig) CreateJsonPatchSet() (patches []k8s.JsonPatch) {
 	}
 
 	if p.Node.ConfigSource != nil {
-		patches = append(patches, k8s.JsonPatchObject{
+		patchSet.Add(k8s.JsonPatchObject{
 			Op:    "replace",
 			Path:  "/spec/configSource",
 			Value: *p.Node.ConfigSource,
@@ -128,7 +128,7 @@ func (p *PoolConfig) CreateJsonPatchSet() (patches []k8s.JsonPatch) {
 
 	if p.Node.Labels != nil {
 		for name, value := range *p.Node.Labels {
-			patches = append(patches, k8s.JsonPatchString{
+			patchSet.Add(k8s.JsonPatchString{
 				Op:    "replace",
 				Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(name)),
 				Value: value,
@@ -138,7 +138,7 @@ func (p *PoolConfig) CreateJsonPatchSet() (patches []k8s.JsonPatch) {
 
 	if p.Node.Annotations != nil {
 		for name, value := range *p.Node.Annotations {
-			patches = append(patches, k8s.JsonPatchString{
+			patchSet.Add(k8s.JsonPatchString{
 				Op:    "replace",
 				Path:  fmt.Sprintf("/metadata/annotations/%s", k8s.PatchPathEsacpe(name)),
 				Value: value,
@@ -146,5 +146,5 @@ func (p *PoolConfig) CreateJsonPatchSet() (patches []k8s.JsonPatch) {
 		}
 	}
 
-	return patches
+	return
 }
