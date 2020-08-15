@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/kube-pool-manager/config"
@@ -16,6 +17,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
+	"time"
 )
 
 type (
@@ -85,6 +87,7 @@ func (r *KubePoolManager) initK8s() {
 
 func (m *KubePoolManager) Start() {
 	go func() {
+		m.leaderElect()
 		for {
 			log.Info("(re)starting node watch")
 			if err := m.startNodeWatch(); err != nil {
@@ -92,6 +95,26 @@ func (m *KubePoolManager) Start() {
 			}
 		}
 	}()
+}
+
+func (m *KubePoolManager) leaderElect() {
+	if m.Opts.Lease.Enabled {
+		log.Info("trying to become leader")
+		if m.Opts.Instance.Pod != nil && os.Getenv("POD_NAME") == "" {
+			err := os.Setenv("POD_NAME", *m.Opts.Instance.Pod)
+			if err != nil {
+				log.Panic(err)
+			}
+		}
+
+		time.Sleep(15 * time.Second)
+		err := leader.Become(m.ctx, m.Opts.Lease.Name)
+		if err != nil {
+			log.Error(err, "Failed to retry for leader lock")
+			os.Exit(1)
+		}
+		log.Info("aquired leader lock, continue")
+	}
 }
 
 func (m *KubePoolManager) startNodeWatch() error {

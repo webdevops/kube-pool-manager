@@ -15,9 +15,22 @@ type (
 			LogJson bool `           long:"log.json"     env:"LOG_JSON" description:"Switch log output to json format"`
 		}
 
+		// instance
+		Instance struct {
+			Nodename  *string `long:"instance.nodename"    env:"INSTANCE_NODENAME"   description:"Name of node where autopilot is running"`
+			Namespace *string `long:"instance.namespace"   env:"INSTANCE_NAMESPACE"   description:"Name of namespace where autopilot is running"`
+			Pod       *string `long:"instance.pod"         env:"INSTANCE_POD"         description:"Name of pod where autopilot is running"`
+		}
+
 		K8s struct {
 			NodeLabelSelector string        `long:"kube.node.labelselector"     env:"KUBE_NODE_LABELSELECTOR"     description:"Node Label selector which nodes should be checked"        default:""`
 			WatchTimeout      time.Duration `long:"kube.watch.timeout"          env:"KUBE_WATCH_TIMEOUT"          description:"Timeout & full resync for node watch (time.Duration)"     default:"24h"`
+		}
+
+		// lease
+		Lease struct {
+			Enabled bool   `long:"lease.enable"  env:"LEASE_ENABLE"  description:"Enable lease (leader election; enabled by default in docker images)"`
+			Name    string `long:"lease.name"    env:"LEASE_NAME"    description:"Name of lease lock"     default:"kube-pool-manager-leader"`
 		}
 
 		// general options
