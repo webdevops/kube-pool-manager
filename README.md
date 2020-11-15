@@ -2,8 +2,8 @@ Kube pool manager
 =================
 
 [![license](https://img.shields.io/github/license/webdevops/kube-pool-manager.svg)](https://github.com/webdevops/kube-pool-manager/blob/master/LICENSE)
-[![Docker](https://img.shields.io/docker/cloud/automated/webdevops/kube-pool-manager)](https://hub.docker.com/r/webdevops/kube-pool-manager/)
-[![Docker Build Status](https://img.shields.io/docker/cloud/build/webdevops/kube-pool-manager)](https://hub.docker.com/r/webdevops/kube-pool-manager/)
+[![DockerHub](https://img.shields.io/badge/DockerHub-webdevops%2Fkube--pool--manager-blue)](https://hub.docker.com/r/webdevops/kube-pool-manager/)
+[![Quay.io](https://img.shields.io/badge/Quay.io-webdevops%2Fkube--pool--manager-blue)](https://quay.io/repository/webdevops/kube-pool-manager)
 
 Manager for Kubernetes pool, automatic applies configuration (annotations, labels, configSource, role) to kubernetes nodes based on any node spec.
 
