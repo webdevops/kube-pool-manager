@@ -31,10 +31,10 @@ type (
 	}
 
 	PoolConfigNode struct {
-		Roles        *[]string                   `yaml:"roles"`
+		Roles        PoolConfigNodeValueMap      `yaml:"roles"`
 		ConfigSource *PoolConfigNodeConfigSource `yaml:"configSource"`
-		Labels       *map[string]string          `yaml:"labels"`
-		Annotations  *map[string]string          `yaml:"annotations"`
+		Labels       PoolConfigNodeValueMap      `yaml:"labels"`
+		Annotations  PoolConfigNodeValueMap      `yaml:"annotations"`
 	}
 
 	PoolConfigNodeConfigSource struct {
@@ -44,7 +44,43 @@ type (
 			KubeletConfigKey string `yaml:"kubeletConfigKey" json:"kubeletConfigKey"`
 		} `yaml:"configMap" json:"configMap"`
 	}
+
+	PoolConfigNodeValueMap struct {
+		entries *map[string]*string
+	}
 )
+
+func (valueMap *PoolConfigNodeValueMap) Entries() map[string]*string {
+	var mapList map[string]*string
+
+	if valueMap.entries != nil {
+		mapList = *valueMap.entries
+	}
+
+	return mapList
+}
+
+func (valueMap *PoolConfigNodeValueMap) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	mapList := map[string]*string{}
+	err := unmarshal(&mapList)
+	if err != nil {
+		var stringList []string
+		err := unmarshal(&stringList)
+		if err != nil {
+			return err
+		}
+		if len(stringList) > 0 {
+			emptyVal := ""
+			for _, val := range stringList {
+				mapList[val] = &emptyVal
+			}
+			valueMap.entries = &mapList
+		}
+	} else {
+		valueMap.entries = &mapList
+	}
+	return nil
+}
 
 func (p *PoolConfig) IsMatchingNode(node *corev1.Node) (bool, error) {
 	for num, selector := range p.Selector {
@@ -104,16 +140,22 @@ func (p *PoolConfig) IsMatchingNode(node *corev1.Node) (bool, error) {
 	return true, nil
 }
 
-func (p *PoolConfig) CreateJsonPatchSet() (patchSet *k8s.JsonPatchSet) {
+func (p *PoolConfig) CreateJsonPatchSet(node *corev1.Node) (patchSet *k8s.JsonPatchSet) {
 	patchSet = k8s.NewJsonPatchSet()
 
-	if p.Node.Roles != nil {
-		for _, role := range *p.Node.Roles {
-			label := fmt.Sprintf("node-role.kubernetes.io/%s", role)
+	for roleName, roleValue := range p.Node.Roles.Entries() {
+		label := fmt.Sprintf("node-role.kubernetes.io/%s", roleName)
+		if roleValue != nil {
+			value := *roleValue
 			patchSet.Add(k8s.JsonPatchString{
 				Op:    "replace",
 				Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(label)),
-				Value: "",
+				Value: &value,
+			})
+		} else if _, labelExists := node.Labels[label]; labelExists {
+			patchSet.Add(k8s.JsonPatchString{
+				Op:   "remove",
+				Path: fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(label)),
 			})
 		}
 	}
@@ -126,22 +168,34 @@ func (p *PoolConfig) CreateJsonPatchSet() (patchSet *k8s.JsonPatchSet) {
 		})
 	}
 
-	if p.Node.Labels != nil {
-		for name, value := range *p.Node.Labels {
+	for labelName, labelValue := range p.Node.Labels.Entries() {
+		if labelValue != nil {
+			value := *labelValue
 			patchSet.Add(k8s.JsonPatchString{
 				Op:    "replace",
-				Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(name)),
-				Value: value,
+				Path:  fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(labelName)),
+				Value: &value,
+			})
+		} else if _, labelExists := node.Labels[labelName]; labelExists {
+			patchSet.Add(k8s.JsonPatchString{
+				Op:   "remove",
+				Path: fmt.Sprintf("/metadata/labels/%s", k8s.PatchPathEsacpe(labelName)),
 			})
 		}
 	}
 
-	if p.Node.Annotations != nil {
-		for name, value := range *p.Node.Annotations {
+	for annotationName, annotationValue := range p.Node.Annotations.Entries() {
+		if annotationValue != nil {
+			value := *annotationValue
 			patchSet.Add(k8s.JsonPatchString{
 				Op:    "replace",
-				Path:  fmt.Sprintf("/metadata/annotations/%s", k8s.PatchPathEsacpe(name)),
-				Value: value,
+				Path:  fmt.Sprintf("/metadata/annotations/%s", k8s.PatchPathEsacpe(annotationName)),
+				Value: &value,
+			})
+		} else if _, labelExists := node.Annotations[annotationName]; labelExists {
+			patchSet.Add(k8s.JsonPatchString{
+				Op:   "remove",
+				Path: fmt.Sprintf("/metadata/annotations/%s", k8s.PatchPathEsacpe(annotationName)),
 			})
 		}
 	}

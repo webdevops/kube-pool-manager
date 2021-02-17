@@ -161,7 +161,7 @@ func (m *KubePoolManager) applyNode(node *corev1.Node) {
 			poolLogger.Infof("adding configuration from pool \"%s\" to node \"%s\"", poolConfig.Name, node.Name)
 
 			// create json patch
-			patchSet := poolConfig.CreateJsonPatchSet()
+			patchSet := poolConfig.CreateJsonPatchSet(node)
 			nodePatchSets.AddSet(patchSet)
 			poolNameList = append(poolNameList, poolConfig.Name)
 		} else {
@@ -177,6 +177,7 @@ func (m *KubePoolManager) applyNode(node *corev1.Node) {
 		contextLogger.Errorf("failed to create json patch: %v", patchErr)
 		return
 	}
+	contextLogger.Debugf("apply patchset: %v", string(patchBytes))
 
 	if !m.Opts.DryRun {
 		// patch node

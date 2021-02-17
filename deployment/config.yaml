@@ -20,4 +20,4 @@ data:
           labels:
             webdevops.io/testing: true
           annotations:
-            webdevops.io/testing: 2
+            webdevops.io/testing: null

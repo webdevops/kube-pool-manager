@@ -1,68 +1,73 @@
 pools:
-- pool: linux
-  continue: true
-  selector:
-    - path: "{.metadata.labels.kubernetes\\.io/os}"
-      match: "linux"
-  node:
-    # sets the kubernetes node role
-    roles: [linux]
+  - pool: linux
+    continue: true
+    selector:
+      - path: "{.metadata.labels.kubernetes\\.io/os}"
+        match: "linux"
+    node:
+      # sets the kubernetes node role
+      roles: [linux]
 
-- pool: windows
-  continue: true
-  selector:
-    - path: "{.metadata.labels.kubernetes\\.io/os}"
-      match: "windows"
-  node:
-    # sets the kubernetes node role
-    role: [windows]
+  - pool: windows
+    continue: true
+    selector:
+      - path: "{.metadata.labels.kubernetes\\.io/os}"
+        match: "windows"
+    node:
+      # sets the kubernetes node role
+      role: [windows]
 
-- pool: agents
-  selector:
-    - path: "{.spec.providerID}"
-      # simple match
-      match: "azure:///subscriptions/d86bcf13-ddf7-45ea-82f1-6f656767a318/resourceGroups/mc_k8s_mblaschke_westeurope/providers/Microsoft.Compute/virtualMachineScaleSets/aks-agents-35471996-vmss/virtualMachines/30"
-  node:
-    # sets the kubernetes node role
-    roles: [agent,foobar]
+  - pool: agents
+    selector:
+      - path: "{.spec.providerID}"
+        # simple match
+        match: "azure:///subscriptions/d86bcf13-ddf7-45ea-82f1-6f656767a318/resourceGroups/mc_k8s_mblaschke_westeurope/providers/Microsoft.Compute/virtualMachineScaleSets/aks-agents-35471996-vmss/virtualMachines/30"
+    node:
+      # sets the kubernetes node role
+      roles: [agent,foobar]
 
-    # dynamic kubelet configuration
-    # see https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
-    #configSource:
-    #  configMap:
-    #    name: kubelet-config
-    #    namespace: kube-system
-    #    kubeletConfigKey: kubelet
+      # dynamic kubelet configuration
+      # see https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
+      #configSource:
+      #  configMap:
+      #    name: kubelet-config
+      #    namespace: kube-system
+      #    kubeletConfigKey: kubelet
 
-    # node labels
-    labels:
-        webdevops.io/testing: "true"
+      # node labels
+      labels:
+          webdevops.io/testing: "true"
 
-    # node annotations
-    annotations:
-        webdevops.io/testing: 2
+      # node annotations
+      annotations:
+          webdevops.io/testing: null
 
-- pool: agents-regexp
-  selector:
-    - path: "{.spec.providerID}"
-      # regexp match
-      regexp: "^.+virtualMachineScaleSets\\/aks-agents-35471996-vmss\\/.+$"
-  node:
-    # sets the kubernetes node role
-    roles: [agent,regexp]
+  - pool: agents-regexp
+    selector:
+      - path: "{.spec.providerID}"
+        # regexp match
+        regexp: "^.+virtualMachineScaleSets\\/aks-agents-35471996-vmss\\/.+$"
+    node:
+      # sets the kubernetes node role
+      roles:
+        agent: ""
+        regexp: ""
+        linux: null  # remove linux role
 
-    # dynamic kubelet configuration
-    # see https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
-    #configSource:
-    #  configMap:
-    #    name: kubelet-config
-    #    namespace: kube-system
-    #    kubeletConfigKey: kubelet
+      # dynamic kubelet configuration
+      # see https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
+      #configSource:
+      #  configMap:
+      #    name: kubelet-config
+      #    namespace: kube-system
+      #    kubeletConfigKey: kubelet
 
-    # node labels
-    labels:
-      webdevops.io/testing: "regexp"
+      # node labels
+      labels:
+        webdevops.io/testing: "regexp"
+        webdevops.io/testing2: null # remove that annotation
 
-    # node annotations
-    annotations:
-      webdevops.io/testing: 3
+      # node annotations
+      annotations:
+        webdevops.io/testing: "foobar"
+        webdevops.io/testing2: null # remove that annotation
