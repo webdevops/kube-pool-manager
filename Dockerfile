@@ -22,5 +22,5 @@ FROM gcr.io/distroless/base
 ENV LOG_JSON=1 \
     LEASE_ENABLE=1
 COPY --from=build /go/src/github.com/webdevops/kube-pool-manager/kube-pool-manager /
-USER 1000
+USER 1000:1000
 ENTRYPOINT ["/kube-pool-manager"]
