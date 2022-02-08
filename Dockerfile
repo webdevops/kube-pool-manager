@@ -12,7 +12,7 @@ RUN ./kube-pool-manager --help
 #############################################
 # FINAL IMAGE
 #############################################
-FROM gcr.io/distroless/base
+FROM gcr.io/distroless/static
 ENV LOG_JSON=1 \
     LEASE_ENABLE=1
 COPY --from=build /go/src/github.com/webdevops/kube-pool-manager/kube-pool-manager /
