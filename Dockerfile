@@ -11,7 +11,6 @@ RUN make dependencies
 # Compile
 COPY ./ /go/src/github.com/webdevops/kube-pool-manager
 RUN make test
-RUN make lint
 RUN make build
 RUN ./kube-pool-manager --help
 
