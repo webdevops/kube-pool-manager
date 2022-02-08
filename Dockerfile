@@ -2,14 +2,9 @@ FROM golang:1.17 as build
 
 WORKDIR /go/src/github.com/webdevops/kube-pool-manager
 
-# Get deps (cached)
-COPY ./go.mod /go/src/github.com/webdevops/kube-pool-manager
-COPY ./go.sum /go/src/github.com/webdevops/kube-pool-manager
-COPY ./Makefile /go/src/github.com/webdevops/kube-pool-manager
-RUN make dependencies
-
 # Compile
 COPY ./ /go/src/github.com/webdevops/kube-pool-manager
+RUN make dependencies
 RUN make test
 RUN make build
 RUN ./kube-pool-manager --help
