@@ -27,6 +27,8 @@ type (
 		ctx       context.Context
 		k8sClient *kubernetes.Clientset
 
+		nodePatchStatus map[string]bool
+
 		prometheus struct {
 			nodePoolStatus *prometheus.GaugeVec
 			nodeApplied    *prometheus.GaugeVec
@@ -36,6 +38,7 @@ type (
 
 func (m *KubePoolManager) Init() {
 	m.ctx = context.Background()
+	m.nodePatchStatus = map[string]bool{}
 	m.initK8s()
 	m.initPrometheus()
 }
@@ -87,10 +90,19 @@ func (r *KubePoolManager) initK8s() {
 func (m *KubePoolManager) Start() {
 	go func() {
 		m.leaderElect()
+
+		log.Info("initial node pool apply")
+		m.startupApply()
+
 		for {
 			log.Info("(re)starting node watch")
 			if err := m.startNodeWatch(); err != nil {
-				log.Errorf("node watcher stopped: %v", err)
+				log.Warnf("node watcher stopped: %v", err)
+			}
+
+			if m.Opts.K8s.ReapplyOnWatchTimeout {
+				log.Info("reapply node pool settings")
+				m.startupApply()
 			}
 		}
 	}()
@@ -116,6 +128,20 @@ func (m *KubePoolManager) leaderElect() {
 	}
 }
 
+func (m *KubePoolManager) startupApply() {
+	listOpts := metav1.ListOptions{}
+	nodeList, err := m.k8sClient.CoreV1().Nodes().List(m.ctx, listOpts)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	m.nodePatchStatus = map[string]bool{}
+	for _, node := range nodeList.Items {
+		m.nodePatchStatus[node.Name] = true
+		m.applyNode(&node)
+	}
+}
+
 func (m *KubePoolManager) startNodeWatch() error {
 	timeout := int64(m.Opts.K8s.WatchTimeout.Seconds())
 	watchOpts := metav1.ListOptions{
@@ -131,9 +157,20 @@ func (m *KubePoolManager) startNodeWatch() error {
 
 	for res := range nodeWatcher.ResultChan() {
 		switch res.Type {
-		case watch.Added:
+		case watch.Modified:
 			if node, ok := res.Object.(*corev1.Node); ok {
-				m.applyNode(node)
+				if _, exists := m.nodePatchStatus[node.Name]; !exists {
+					m.nodePatchStatus[node.Name] = false
+				}
+
+				if !m.nodePatchStatus[node.Name] && m.checkNodeCondition(node) {
+					m.applyNode(node)
+					m.nodePatchStatus[node.Name] = true
+				}
+			}
+		case watch.Deleted:
+			if node, ok := res.Object.(*corev1.Node); ok {
+				delete(m.nodePatchStatus, node.Name)
 			}
 		case watch.Error:
 			log.Errorf("go watch error event %v", res.Object)
@@ -141,6 +178,16 @@ func (m *KubePoolManager) startNodeWatch() error {
 	}
 
 	return fmt.Errorf("terminated")
+}
+
+func (m *KubePoolManager) checkNodeCondition(node *corev1.Node) bool {
+	for _, condition := range node.Status.Conditions {
+		if stringCompare(string(condition.Type), "ready") && stringCompare(condition.Reason, "kubeletready") && stringCompare(string(condition.Status), "true") {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (m *KubePoolManager) applyNode(node *corev1.Node) {

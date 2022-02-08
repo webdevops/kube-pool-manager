@@ -17,14 +17,14 @@ pools:
       # sets the kubernetes node role
       role: [windows]
 
-  - pool: agents
+  - pool: azure
     selector:
       - path: "{.spec.providerID}"
         # simple match
-        match: "azure:///subscriptions/d86bcf13-ddf7-45ea-82f1-6f656767a318/resourceGroups/mc_k8s_mblaschke_westeurope/providers/Microsoft.Compute/virtualMachineScaleSets/aks-agents-35471996-vmss/virtualMachines/30"
+        regexp: "azure://.*"
     node:
       # sets the kubernetes node role
-      roles: [agent,foobar]
+      roles: [azure]
 
       # dynamic kubelet configuration
       # see https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/

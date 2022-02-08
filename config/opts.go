@@ -23,8 +23,9 @@ type (
 		}
 
 		K8s struct {
-			NodeLabelSelector string        `long:"kube.node.labelselector"     env:"KUBE_NODE_LABELSELECTOR"     description:"Node Label selector which nodes should be checked"        default:""`
-			WatchTimeout      time.Duration `long:"kube.watch.timeout"          env:"KUBE_WATCH_TIMEOUT"          description:"Timeout & full resync for node watch (time.Duration)"     default:"24h"`
+			NodeLabelSelector     string        `long:"kube.node.labelselector"     env:"KUBE_NODE_LABELSELECTOR"     description:"Node Label selector which nodes should be checked"        default:""`
+			WatchTimeout          time.Duration `long:"kube.watch.timeout"          env:"KUBE_WATCH_TIMEOUT"          description:"Timeout & full resync for node watch (time.Duration)"     default:"24h"`
+			ReapplyOnWatchTimeout bool          `long:"kube.watch.reapply"          env:"KUBE_WATCH_REAPPLY"          description:"Reapply node settings on watch timeout"`
 		}
 
 		// lease

@@ -15,6 +15,8 @@ Sets following settings on nodes if matched:
 - node annotations
 - node [configSource](https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/) 
 
+Node settings are applied on startup and for new nodes (delayed until they are ready) and (optional) on watch timeout.
+
 Configuration
 -------------
 
@@ -30,8 +32,8 @@ Application Options:
       --instance.namespace=      Name of namespace where autopilot is running [$INSTANCE_NAMESPACE]
       --instance.pod=            Name of pod where autopilot is running [$INSTANCE_POD]
       --kube.node.labelselector= Node Label selector which nodes should be checked [$KUBE_NODE_LABELSELECTOR]
-      --kube.watch.timeout=      Timeout & full resync for node watch (time.Duration) (default: 24h)
-                                 [$KUBE_WATCH_TIMEOUT]
+      --kube.watch.timeout=      Timeout & full resync for node watch (time.Duration) (default: 24h) [$KUBE_WATCH_TIMEOUT]
+      --kube.watch.reapply       Reapply node settings on watch timeout [$KUBE_WATCH_REAPPLY]
       --lease.enable             Enable lease (leader election; enabled by default in docker images) [$LEASE_ENABLE]
       --lease.name=              Name of lease lock (default: kube-pool-manager-leader) [$LEASE_NAME]
       --dry-run                  Dry run (do not apply to nodes) [$DRY_RUN]
