@@ -100,6 +100,7 @@ func parseAppConfig(path string) (conf config.Config) {
 	conf = config.Config{}
 
 	log.WithField("path", path).Infof("reading configuration from file %v", path)
+	/* #nosec */
 	if data, err := ioutil.ReadFile(path); err == nil {
 		configRaw = data
 	} else {

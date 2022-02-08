@@ -136,7 +136,8 @@ func (m *KubePoolManager) startupApply() {
 	}
 
 	m.nodePatchStatus = map[string]bool{}
-	for _, node := range nodeList.Items {
+	for _, row := range nodeList.Items {
+		node := row
 		m.nodePatchStatus[node.Name] = true
 		m.applyNode(&node)
 	}
