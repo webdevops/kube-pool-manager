@@ -40,7 +40,7 @@ dependencies:
 
 .PHONY: lint
 lint: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run -E exportloopref,gofmt --timeout=25m
+	$(GOLANGCI_LINT_BIN) run -E exportloopref,gofmt --timeout=30m
 
 .PHONY: gosec
 gosec: $(GOSEC_BIN)
