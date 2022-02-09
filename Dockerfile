@@ -1,5 +1,8 @@
 FROM golang:1.17-alpine as build
 
+RUN apk upgrade --no-cache --force
+RUN apk add --update build-base make git
+
 WORKDIR /go/src/github.com/webdevops/kube-pool-manager
 
 # Compile
