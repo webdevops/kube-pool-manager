@@ -3,11 +3,12 @@ package manager
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/operator-framework/operator-lib/leader"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	"github.com/webdevops/kube-pool-manager/config"
-	"github.com/webdevops/kube-pool-manager/k8s"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -15,8 +16,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"time"
+
+	"github.com/webdevops/kube-pool-manager/config"
+	"github.com/webdevops/kube-pool-manager/k8s"
 )
 
 type (

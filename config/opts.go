@@ -2,8 +2,9 @@ package config
 
 import (
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type (
@@ -34,10 +35,17 @@ type (
 			Name    string `long:"lease.name"    env:"LEASE_NAME"    description:"Name of lease lock"     default:"kube-pool-manager-leader"`
 		}
 
+		// server
+		Server struct {
+			// general options
+			Bind         string        `long:"server.bind"              env:"SERVER_BIND"           description:"Server address"        default:":8080"`
+			ReadTimeout  time.Duration `long:"server.timeout.read"      env:"SERVER_TIMEOUT_READ"   description:"Server read timeout"   default:"5s"`
+			WriteTimeout time.Duration `long:"server.timeout.write"     env:"SERVER_TIMEOUT_WRITE"  description:"Server write timeout"  default:"10s"`
+		}
+
 		// general options
-		DryRun     bool   `long:"dry-run"  env:"DRY_RUN"       description:"Dry run (do not apply to nodes)"`
-		Config     string `long:"config"   env:"CONFIG"        description:"Config path"        required:"true"`
-		ServerBind string `long:"bind"     env:"SERVER_BIND"   description:"Server address"     default:":8080"`
+		DryRun bool   `long:"dry-run"  env:"DRY_RUN"       description:"Dry run (do not apply to nodes)"`
+		Config string `long:"config"   env:"CONFIG"        description:"Config path"        required:"true"`
 	}
 )
 

@@ -1,3 +1,4 @@
 /vendor
 /kube-pool-manager
 *.exe
+/release-assets

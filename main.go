@@ -1,19 +1,21 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"github.com/jessevdk/go-flags"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
-	"github.com/webdevops/kube-pool-manager/config"
-	"github.com/webdevops/kube-pool-manager/manager"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 	"runtime"
 	"strings"
+
+	"github.com/jessevdk/go-flags"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
+
+	"github.com/webdevops/kube-pool-manager/config"
+	"github.com/webdevops/kube-pool-manager/manager"
 )
 
 const (
@@ -43,7 +45,7 @@ func main() {
 	manager.Init()
 	manager.Start()
 
-	log.Infof("starting http server on %s", opts.ServerBind)
+	log.Infof("starting http server on %s", opts.Server.Bind)
 	startHttpServer()
 }
 
@@ -53,7 +55,8 @@ func initArgparser() {
 
 	// check if there is an parse error
 	if err != nil {
-		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		} else {
 			fmt.Println()
@@ -101,7 +104,7 @@ func parseAppConfig(path string) (conf config.Config) {
 
 	log.WithField("path", path).Infof("reading configuration from file %v", path)
 	/* #nosec */
-	if data, err := ioutil.ReadFile(path); err == nil {
+	if data, err := os.ReadFile(path); err == nil {
 		configRaw = data
 	} else {
 		panic(err)
@@ -116,13 +119,29 @@ func parseAppConfig(path string) (conf config.Config) {
 }
 
 func startHttpServer() {
+	mux := http.NewServeMux()
+
 	// healthz
-	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fmt.Fprint(w, "Ok"); err != nil {
 			log.Error(err)
 		}
 	})
 
-	http.Handle("/metrics", promhttp.Handler())
-	log.Fatal(http.ListenAndServe(opts.ServerBind, nil))
+	// readyz
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if _, err := fmt.Fprint(w, "Ok"); err != nil {
+			log.Error(err)
+		}
+	})
+
+	mux.Handle("/metrics", promhttp.Handler())
+
+	srv := &http.Server{
+		Addr:         opts.Server.Bind,
+		Handler:      mux,
+		ReadTimeout:  opts.Server.ReadTimeout,
+		WriteTimeout: opts.Server.WriteTimeout,
+	}
+	log.Fatal(srv.ListenAndServe())
 }

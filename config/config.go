@@ -2,12 +2,14 @@ package config
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"github.com/webdevops/kube-pool-manager/k8s"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/util/jsonpath"
 	"regexp"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/jsonpath"
+
+	"github.com/webdevops/kube-pool-manager/k8s"
 )
 
 type (
