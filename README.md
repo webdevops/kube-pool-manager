@@ -14,7 +14,7 @@ Sets following settings on nodes if matched:
 - node role
 - node labels
 - node annotations
-- node [configSource](https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/) 
+- node [configSource](https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/)
 
 Node settings are applied on startup and for new nodes (delayed until they are ready) and (optional) on watch timeout.
 
@@ -37,9 +37,11 @@ Application Options:
       --kube.watch.reapply       Reapply node settings on watch timeout [$KUBE_WATCH_REAPPLY]
       --lease.enable             Enable lease (leader election; enabled by default in docker images) [$LEASE_ENABLE]
       --lease.name=              Name of lease lock (default: kube-pool-manager-leader) [$LEASE_NAME]
+      --server.bind=             Server address (default: :8080) [$SERVER_BIND]
+      --server.timeout.read=     Server read timeout (default: 5s) [$SERVER_TIMEOUT_READ]
+      --server.timeout.write=    Server write timeout (default: 10s) [$SERVER_TIMEOUT_WRITE]
       --dry-run                  Dry run (do not apply to nodes) [$DRY_RUN]
       --config=                  Config path [$CONFIG]
-      --bind=                    Server address (default: :8080) [$SERVER_BIND]
 
 Help Options:
   -h, --help                     Show this help message
