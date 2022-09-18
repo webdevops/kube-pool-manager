@@ -38,12 +38,12 @@ func main() {
 	log.Infof("starting kube-pool-manager v%s (%s; %s; by %v)", gitTag, gitCommit, runtime.Version(), Author)
 	log.Info(string(opts.GetJson()))
 
-	manager := manager.KubePoolManager{
+	poolManager := manager.KubePoolManager{
 		Opts:   opts,
 		Config: parseAppConfig(opts.Config),
 	}
-	manager.Init()
-	manager.Start()
+	poolManager.Init()
+	poolManager.Start()
 
 	log.Infof("starting http server on %s", opts.Server.Bind)
 	startHttpServer()
