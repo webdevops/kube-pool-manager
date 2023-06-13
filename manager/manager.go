@@ -8,7 +8,7 @@ import (
 
 	"github.com/operator-framework/operator-lib/leader"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -25,6 +25,8 @@ type (
 	KubePoolManager struct {
 		Opts   config.Opts
 		Config config.Config
+
+		Logger *zap.SugaredLogger
 
 		ctx       context.Context
 		k8sClient *kubernetes.Clientset
@@ -93,17 +95,17 @@ func (m *KubePoolManager) Start() {
 	go func() {
 		m.leaderElect()
 
-		log.Info("initial node pool apply")
+		m.Logger.Info("initial node pool apply")
 		m.startupApply()
 
 		for {
-			log.Info("(re)starting node watch")
+			m.Logger.Info("(re)starting node watch")
 			if err := m.startNodeWatch(); err != nil {
-				log.Warnf("node watcher stopped: %v", err)
+				m.Logger.Warnf("node watcher stopped: %v", err)
 			}
 
 			if m.Opts.K8s.ReapplyOnWatchTimeout {
-				log.Info("reapply node pool settings")
+				m.Logger.Info("reapply node pool settings")
 				m.startupApply()
 			}
 		}
@@ -112,21 +114,21 @@ func (m *KubePoolManager) Start() {
 
 func (m *KubePoolManager) leaderElect() {
 	if m.Opts.Lease.Enabled {
-		log.Info("trying to become leader")
+		m.Logger.Info("trying to become leader")
 		if m.Opts.Instance.Pod != nil && os.Getenv("POD_NAME") == "" {
 			err := os.Setenv("POD_NAME", *m.Opts.Instance.Pod)
 			if err != nil {
-				log.Panic(err)
+				m.Logger.Panic(err)
 			}
 		}
 
 		time.Sleep(15 * time.Second)
 		err := leader.Become(m.ctx, m.Opts.Lease.Name)
 		if err != nil {
-			log.Error(err, "Failed to retry for leader lock")
+			m.Logger.Error(err, "Failed to retry for leader lock")
 			os.Exit(1)
 		}
-		log.Info("aquired leader lock, continue")
+		m.Logger.Info("aquired leader lock, continue")
 	}
 }
 
@@ -134,7 +136,7 @@ func (m *KubePoolManager) startupApply() {
 	listOpts := metav1.ListOptions{}
 	nodeList, err := m.k8sClient.CoreV1().Nodes().List(m.ctx, listOpts)
 	if err != nil {
-		log.Panic(err)
+		m.Logger.Panic(err)
 	}
 
 	m.nodePatchStatus = map[string]bool{}
@@ -154,7 +156,7 @@ func (m *KubePoolManager) startNodeWatch() error {
 	}
 	nodeWatcher, err := m.k8sClient.CoreV1().Nodes().Watch(m.ctx, watchOpts)
 	if err != nil {
-		log.Panic(err)
+		m.Logger.Panic(err)
 	}
 	defer nodeWatcher.Stop()
 
@@ -176,7 +178,7 @@ func (m *KubePoolManager) startNodeWatch() error {
 				delete(m.nodePatchStatus, node.Name)
 			}
 		case watch.Error:
-			log.Errorf("go watch error event %v", res.Object)
+			m.Logger.Errorf("go watch error event %v", res.Object)
 		}
 	}
 
@@ -194,15 +196,15 @@ func (m *KubePoolManager) checkNodeCondition(node *corev1.Node) bool {
 }
 
 func (m *KubePoolManager) applyNode(node *corev1.Node) {
-	contextLogger := log.WithField("node", node.Name)
+	contextLogger := m.Logger.With(zap.String("node", node.Name))
 
 	nodePatchSets := k8s.NewJsonPatchSet()
 	poolNameList := []string{}
 
 	for _, poolConfig := range m.Config.Pools {
 		m.prometheus.nodePoolStatus.WithLabelValues(node.Name, poolConfig.Name).Set(0)
-		poolLogger := contextLogger.WithField("pool", poolConfig.Name)
-		matching, err := poolConfig.IsMatchingNode(node)
+		poolLogger := contextLogger.With(zap.String("pool", poolConfig.Name))
+		matching, err := poolConfig.IsMatchingNode(poolLogger, node)
 		if err != nil {
 			poolLogger.Panic(err)
 		}

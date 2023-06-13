@@ -3,8 +3,11 @@ package config
 import (
 	"testing"
 
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 )
+
+var testLogger *zap.SugaredLogger
 
 func stringPtr(val string) *string {
 	return &val
@@ -23,6 +26,19 @@ func buildNode() *corev1.Node {
 	return &node
 }
 
+func logger() *zap.SugaredLogger {
+	if testLogger == nil {
+		logger, err := zap.NewDevelopmentConfig().Build()
+		if err != nil {
+			panic(err)
+		}
+
+		testLogger = logger.Sugar()
+	}
+
+	return testLogger
+}
+
 func Test_NodeMatcher(t *testing.T) {
 	node := buildNode()
 
@@ -35,7 +51,7 @@ func Test_NodeMatcher(t *testing.T) {
 			},
 		},
 	}
-	matching, err := pool.IsMatchingNode(node)
+	matching, err := pool.IsMatchingNode(logger(), node)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -44,7 +60,7 @@ func Test_NodeMatcher(t *testing.T) {
 	}
 
 	pool.Selector[0].Match = stringPtr("azure:///subscriptions/d86bcf13-ddf7-45ea-82f1-6f656767a318/resourceGroups/mc_k8s_mblaschke_westeurope/providers/Microsoft.Compute/virtualMachineScaleSets/aks-agents-35471996-vmss/virtualMachines/31")
-	matching, err = pool.IsMatchingNode(node)
+	matching, err = pool.IsMatchingNode(logger(), node)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -65,7 +81,7 @@ func Test_NodeRegexp(t *testing.T) {
 			},
 		},
 	}
-	matching, err := pool.IsMatchingNode(node)
+	matching, err := pool.IsMatchingNode(logger(), node)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -86,7 +102,7 @@ func Test_NodeLabelMatcher(t *testing.T) {
 			},
 		},
 	}
-	matching, err := pool.IsMatchingNode(node)
+	matching, err := pool.IsMatchingNode(logger(), node)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -111,7 +127,7 @@ func Test_NodeMultipleMatcher(t *testing.T) {
 			},
 		},
 	}
-	matching, err := pool.IsMatchingNode(node)
+	matching, err := pool.IsMatchingNode(logger(), node)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -120,7 +136,7 @@ func Test_NodeMultipleMatcher(t *testing.T) {
 	}
 
 	node.Spec.ProviderID = "testing"
-	matching, err = pool.IsMatchingNode(node)
+	matching, err = pool.IsMatchingNode(logger(), node)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}

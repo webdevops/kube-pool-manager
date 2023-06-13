@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/jsonpath"
 
@@ -84,7 +84,7 @@ func (valueMap *PoolConfigNodeValueMap) UnmarshalYAML(unmarshal func(interface{}
 	return nil
 }
 
-func (p *PoolConfig) IsMatchingNode(node *corev1.Node) (bool, error) {
+func (p *PoolConfig) IsMatchingNode(logger *zap.SugaredLogger, node *corev1.Node) (bool, error) {
 	for num, selector := range p.Selector {
 		// auto compile regexp
 		if selector.Regexp != nil {
@@ -116,7 +116,7 @@ func (p *PoolConfig) IsMatchingNode(node *corev1.Node) (bool, error) {
 				if strings.Compare(val, *selector.Match) == 0 {
 					selectorMatches = true
 				} else {
-					log.Tracef("Node \"%s\": path \"%s\" with value \"%s\" is not matching value \"%s\"", node.Name, selector.Path, val, *selector.Match)
+					logger.Debugf("Node \"%s\": path \"%s\" with value \"%s\" is not matching value \"%s\"", node.Name, selector.Path, val, *selector.Match)
 				}
 			}
 
@@ -125,7 +125,7 @@ func (p *PoolConfig) IsMatchingNode(node *corev1.Node) (bool, error) {
 				if selector.regexp.MatchString(val) {
 					selectorMatches = true
 				} else {
-					log.Tracef("Node \"%s\": path \"%s\" with value \"%s\" is not matching regexp \"%s\"", node.Name, selector.Path, val, *selector.Regexp)
+					logger.Debugf("Node \"%s\": path \"%s\" with value \"%s\" is not matching regexp \"%s\"", node.Name, selector.Path, val, *selector.Regexp)
 				}
 			}
 
@@ -134,7 +134,7 @@ func (p *PoolConfig) IsMatchingNode(node *corev1.Node) (bool, error) {
 			}
 		} else {
 			// not found -> not matching
-			log.Tracef("Node \"%s\": path \"%s\" not found", node.Name, selector.Path)
+			logger.Debugf("Node \"%s\": path \"%s\" not found", node.Name, selector.Path)
 			return false, nil
 		}
 	}
