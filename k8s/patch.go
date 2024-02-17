@@ -16,10 +16,10 @@ type (
 	}
 
 	JsonPatchObject struct {
-		JsonPatch
-		Op    string      `json:"op"`
-		Path  string      `json:"path"`
-		Value interface{} `json:"value"`
+		JsonPatch `json:"-"`
+		Op        string      `json:"op"`
+		Path      string      `json:"path"`
+		Value     interface{} `json:"value,omitempty"`
 	}
 
 	JsonPatchSet struct {

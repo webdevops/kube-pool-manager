@@ -8,6 +8,12 @@ pools:
       # sets the kubernetes node role
       roles: [linux]
 
+      jsonPatches:
+        # see https://en.wikipedia.org/wiki/JSON_Patch
+        - op: replace
+          path: /metadata/labels/foobar
+          value: barfoo
+
   - pool: windows
     continue: true
     selector:
@@ -46,7 +52,7 @@ pools:
     selector:
       - path: "{.spec.providerID}"
         # regexp match
-        regexp: "^.+virtualMachineScaleSets\\/aks-agents-35471996-vmss\\/.+$"
+        regexp: "^.+virtualMachineScaleSets\\/aks-agents-.+\\/.+$"
     node:
       # sets the kubernetes node role
       roles:

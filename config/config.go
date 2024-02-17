@@ -34,6 +34,7 @@ type (
 
 	PoolConfigNode struct {
 		Roles        PoolConfigNodeValueMap      `yaml:"roles"`
+		JsonPatches  []k8s.JsonPatchObject       `yaml:"jsonPatches"`
 		ConfigSource *PoolConfigNodeConfigSource `yaml:"configSource"`
 		Labels       PoolConfigNodeValueMap      `yaml:"labels"`
 		Annotations  PoolConfigNodeValueMap      `yaml:"annotations"`
@@ -145,6 +146,7 @@ func (p *PoolConfig) IsMatchingNode(logger *zap.SugaredLogger, node *corev1.Node
 func (p *PoolConfig) CreateJsonPatchSet(node *corev1.Node) (patchSet *k8s.JsonPatchSet) {
 	patchSet = k8s.NewJsonPatchSet()
 
+	// node roles
 	for roleName, roleValue := range p.Node.Roles.Entries() {
 		label := fmt.Sprintf("node-role.kubernetes.io/%s", roleName)
 		if roleValue != nil {
@@ -162,6 +164,7 @@ func (p *PoolConfig) CreateJsonPatchSet(node *corev1.Node) (patchSet *k8s.JsonPa
 		}
 	}
 
+	// node config source
 	if p.Node.ConfigSource != nil {
 		patchSet.Add(k8s.JsonPatchObject{
 			Op:    "replace",
@@ -170,6 +173,7 @@ func (p *PoolConfig) CreateJsonPatchSet(node *corev1.Node) (patchSet *k8s.JsonPa
 		})
 	}
 
+	// node labels
 	for labelName, labelValue := range p.Node.Labels.Entries() {
 		if labelValue != nil {
 			value := *labelValue
@@ -186,6 +190,7 @@ func (p *PoolConfig) CreateJsonPatchSet(node *corev1.Node) (patchSet *k8s.JsonPa
 		}
 	}
 
+	// node annotations
 	for annotationName, annotationValue := range p.Node.Annotations.Entries() {
 		if annotationValue != nil {
 			value := *annotationValue
@@ -200,6 +205,11 @@ func (p *PoolConfig) CreateJsonPatchSet(node *corev1.Node) (patchSet *k8s.JsonPa
 				Path: fmt.Sprintf("/metadata/annotations/%s", k8s.PatchPathEsacpe(annotationName)),
 			})
 		}
+	}
+
+	// custom patches
+	for _, patch := range p.Node.JsonPatches {
+		patchSet.Add(patch)
 	}
 
 	return
