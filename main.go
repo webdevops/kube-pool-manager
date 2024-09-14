@@ -22,35 +22,35 @@ const (
 
 var (
 	argparser *flags.Parser
+	Opts      config.Opts
 
 	// Git version information
 	gitCommit = "<unknown>"
 	gitTag    = "<unknown>"
 )
 
-var opts config.Opts
-
 func main() {
 	initArgparser()
 	initLogger()
 
 	logger.Infof("starting kube-pool-manager v%s (%s; %s; by %v)", gitTag, gitCommit, runtime.Version(), Author)
-	logger.Info(string(opts.GetJson()))
+	logger.Info(string(Opts.GetJson()))
+	initSystem()
 
 	poolManager := manager.KubePoolManager{
-		Opts:   opts,
-		Config: parseAppConfig(opts.Config),
+		Opts:   Opts,
+		Config: parseAppConfig(Opts.Config),
 		Logger: logger,
 	}
 	poolManager.Init()
 	poolManager.Start()
 
-	logger.Infof("starting http server on %s", opts.Server.Bind)
+	logger.Infof("starting http server on %s", Opts.Server.Bind)
 	startHttpServer()
 }
 
 func initArgparser() {
-	argparser = flags.NewParser(&opts, flags.Default)
+	argparser = flags.NewParser(&Opts, flags.Default)
 	_, err := argparser.Parse()
 
 	// check if there is an parse error
@@ -107,10 +107,10 @@ func startHttpServer() {
 	mux.Handle("/metrics", promhttp.Handler())
 
 	srv := &http.Server{
-		Addr:         opts.Server.Bind,
+		Addr:         Opts.Server.Bind,
 		Handler:      mux,
-		ReadTimeout:  opts.Server.ReadTimeout,
-		WriteTimeout: opts.Server.WriteTimeout,
+		ReadTimeout:  Opts.Server.ReadTimeout,
+		WriteTimeout: Opts.Server.WriteTimeout,
 	}
 	logger.Fatal(srv.ListenAndServe())
 }
