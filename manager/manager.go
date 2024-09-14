@@ -17,6 +17,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/go-logr/zapr"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+
 	"github.com/webdevops/kube-pool-manager/config"
 	"github.com/webdevops/kube-pool-manager/k8s"
 )
@@ -89,6 +92,8 @@ func (r *KubePoolManager) initK8s() {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	log.SetLogger(zapr.NewLogger(r.Logger.Desugar()))
 }
 
 func (m *KubePoolManager) Start() {
