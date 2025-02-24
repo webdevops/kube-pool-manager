@@ -5,19 +5,19 @@ go 1.23.0
 toolchain go1.23.5
 
 require (
-	github.com/KimMachineGun/automemlimit v0.7.0
+	github.com/KimMachineGun/automemlimit v0.7.1
 	github.com/dustin/go-humanize v1.0.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/operator-framework/operator-lib v0.17.0
-	github.com/prometheus/client_golang v1.20.5
+	github.com/prometheus/client_golang v1.21.0
 	go.uber.org/zap v1.27.0
 	go.uber.org/zap/exp v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.32.1
-	k8s.io/apimachinery v0.32.1
-	k8s.io/client-go v0.32.1
-	sigs.k8s.io/controller-runtime v0.20.1
+	k8s.io/api v0.32.2
+	k8s.io/apimachinery v0.32.2
+	k8s.io/client-go v0.32.2
+	sigs.k8s.io/controller-runtime v0.20.2
 )
 
 require (
