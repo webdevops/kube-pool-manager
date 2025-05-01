@@ -21,7 +21,7 @@ pools:
         match: "windows"
     node:
       # sets the kubernetes node role
-      role: [windows]
+      roles: [windows]
 
   - pool: azure
     selector:

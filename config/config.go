@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -14,38 +15,38 @@ import (
 
 type (
 	Config struct {
-		Pools []PoolConfig `yaml:"pools"`
+		Pools []PoolConfig `json:"pools"`
 	}
 
 	PoolConfig struct {
-		Name     string               `yaml:"pool"`
-		Continue bool                 `yaml:"continue"`
-		Selector []PoolConfigSelector `yaml:"selector"`
-		Node     PoolConfigNode       `yaml:"node"`
+		Name     string               `json:"pool"`
+		Continue bool                 `json:"continue"`
+		Selector []PoolConfigSelector `json:"selector"`
+		Node     PoolConfigNode       `json:"node"`
 	}
 
 	PoolConfigSelector struct {
-		Path     string `yaml:"path"`
+		Path     string `json:"path"`
 		jsonPath *jsonpath.JSONPath
-		Match    *string `yaml:"match"`
-		Regexp   *string `yaml:"regexp"`
+		Match    *string `json:"match"`
+		Regexp   *string `json:"regexp"`
 		regexp   *regexp.Regexp
 	}
 
 	PoolConfigNode struct {
-		Roles        PoolConfigNodeValueMap      `yaml:"roles"`
-		JsonPatches  []k8s.JsonPatchObject       `yaml:"jsonPatches"`
-		ConfigSource *PoolConfigNodeConfigSource `yaml:"configSource"`
-		Labels       PoolConfigNodeValueMap      `yaml:"labels"`
-		Annotations  PoolConfigNodeValueMap      `yaml:"annotations"`
+		Roles        PoolConfigNodeValueMap      `json:"roles"`
+		JsonPatches  []k8s.JsonPatchObject       `json:"jsonPatches"`
+		ConfigSource *PoolConfigNodeConfigSource `json:"configSource"`
+		Labels       PoolConfigNodeValueMap      `json:"labels"`
+		Annotations  PoolConfigNodeValueMap      `json:"annotations"`
 	}
 
 	PoolConfigNodeConfigSource struct {
 		ConfigMap struct {
-			Name             string `yaml:"name" json:"name"`
-			Namespace        string `yaml:"namespace" json:"namespace"`
-			KubeletConfigKey string `yaml:"kubeletConfigKey" json:"kubeletConfigKey"`
-		} `yaml:"configMap" json:"configMap"`
+			Name             string `json:"name"`
+			Namespace        string `json:"namespace"`
+			KubeletConfigKey string `json:"kubeletConfigKey"`
+		} `json:"configMap"`
 	}
 
 	PoolConfigNodeValueMap struct {
@@ -63,12 +64,12 @@ func (valueMap *PoolConfigNodeValueMap) Entries() map[string]*string {
 	return mapList
 }
 
-func (valueMap *PoolConfigNodeValueMap) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (valueMap *PoolConfigNodeValueMap) UnmarshalJSON(b []byte) error {
 	mapList := map[string]*string{}
-	err := unmarshal(&mapList)
+	err := json.Unmarshal(b, &mapList)
 	if err != nil {
 		var stringList []string
-		err := unmarshal(&stringList)
+		err := json.Unmarshal(b, &stringList)
 		if err != nil {
 			return err
 		}

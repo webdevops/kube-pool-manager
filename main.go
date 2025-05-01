@@ -10,7 +10,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"github.com/webdevops/kube-pool-manager/config"
 	"github.com/webdevops/kube-pool-manager/manager"
@@ -73,14 +73,13 @@ func parseAppConfig(path string) (conf config.Config) {
 
 	logger.With(zap.String("path", path)).Infof("reading configuration from file %v", path)
 	/* #nosec */
-	if data, err := os.ReadFile(path); err == nil {
-		configRaw = data
-	} else {
-		logger.Fatal(err)
+	configRaw, err := os.ReadFile(path)
+	if err != nil {
+		logger.Fatal(err.Error())
 	}
 
 	logger.With(zap.String("path", path)).Info("parsing configuration")
-	if err := yaml.Unmarshal(configRaw, &conf); err != nil {
+	if err := yaml.UnmarshalStrict(configRaw, &conf); err != nil {
 		logger.Fatal(err)
 	}
 
