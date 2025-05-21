@@ -7,10 +7,10 @@ import (
 	"os"
 	"runtime"
 
+	yaml "github.com/goccy/go-yaml"
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
-	"sigs.k8s.io/yaml"
 
 	"github.com/webdevops/kube-pool-manager/config"
 	"github.com/webdevops/kube-pool-manager/manager"
@@ -79,7 +79,8 @@ func parseAppConfig(path string) (conf config.Config) {
 	}
 
 	logger.With(zap.String("path", path)).Info("parsing configuration")
-	if err := yaml.UnmarshalStrict(configRaw, &conf); err != nil {
+	err = yaml.UnmarshalWithOptions(configRaw, &conf, yaml.Strict(), yaml.UseJSONUnmarshaler())
+	if err != nil {
 		logger.Fatal(err)
 	}
 
