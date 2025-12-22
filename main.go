@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
@@ -10,7 +11,6 @@ import (
 	yaml "github.com/goccy/go-yaml"
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
 
 	"github.com/webdevops/kube-pool-manager/config"
 	"github.com/webdevops/kube-pool-manager/manager"
@@ -27,13 +27,14 @@ var (
 	// Git version information
 	gitCommit = "<unknown>"
 	gitTag    = "<unknown>"
+	buildDate = "<unknown>"
 )
 
 func main() {
 	initArgparser()
 	initLogger()
 
-	logger.Infof("starting kube-pool-manager v%s (%s; %s; by %v)", gitTag, gitCommit, runtime.Version(), Author)
+	logger.Infof("starting kube-pool-manager v%s (%s; %s; by %v at %v)", gitTag, gitCommit, runtime.Version(), Author, buildDate)
 	logger.Info(string(Opts.GetJson()))
 	initSystem()
 
@@ -71,17 +72,17 @@ func parseAppConfig(path string) (conf config.Config) {
 
 	conf = config.Config{}
 
-	logger.With(zap.String("path", path)).Infof("reading configuration from file %v", path)
+	logger.With(slog.String("path", path)).Infof("reading configuration from file %v", path)
 	/* #nosec */
 	configRaw, err := os.ReadFile(path)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
 
-	logger.With(zap.String("path", path)).Info("parsing configuration")
+	logger.With(slog.String("path", path)).Info("parsing configuration")
 	err = yaml.UnmarshalWithOptions(configRaw, &conf, yaml.Strict(), yaml.UseJSONUnmarshaler())
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal(err.Error())
 	}
 
 	return
@@ -93,14 +94,14 @@ func startHttpServer() {
 	// healthz
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fmt.Fprint(w, "Ok"); err != nil {
-			logger.Error(err)
+			logger.Error(err.Error())
 		}
 	})
 
 	// readyz
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fmt.Fprint(w, "Ok"); err != nil {
-			logger.Error(err)
+			logger.Error(err.Error())
 		}
 	})
 
@@ -112,5 +113,7 @@ func startHttpServer() {
 		ReadTimeout:  Opts.Server.ReadTimeout,
 		WriteTimeout: Opts.Server.WriteTimeout,
 	}
-	logger.Fatal(srv.ListenAndServe())
+	if err := srv.ListenAndServe(); err != nil {
+		logger.Fatal(err.Error())
+	}
 }

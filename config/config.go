@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"go.uber.org/zap"
+	"github.com/webdevops/go-common/log/slogger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/jsonpath"
 
@@ -86,7 +86,7 @@ func (valueMap *PoolConfigNodeValueMap) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (p *PoolConfig) IsMatchingNode(logger *zap.SugaredLogger, node *corev1.Node) (bool, error) {
+func (p *PoolConfig) IsMatchingNode(logger *slogger.Logger, node *corev1.Node) (bool, error) {
 	for num, selector := range p.Selector {
 		// auto compile regexp
 		if selector.Regexp != nil {

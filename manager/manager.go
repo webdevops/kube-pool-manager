@@ -3,12 +3,14 @@ package manager
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-lib/leader"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/webdevops/go-common/log/slogger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,7 +19,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/go-logr/zapr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/webdevops/kube-pool-manager/config"
@@ -29,7 +30,7 @@ type (
 		Opts   config.Opts
 		Config config.Config
 
-		Logger *zap.SugaredLogger
+		Logger *slogger.Logger
 
 		ctx       context.Context
 		k8sClient *kubernetes.Clientset
@@ -93,7 +94,13 @@ func (r *KubePoolManager) initK8s() {
 		panic(err.Error())
 	}
 
-	log.SetLogger(zapr.NewLogger(r.Logger.Desugar()))
+	// kube logger (with translator)
+	logrHandler := logr.NewContextWithSlogLogger(context.Background(), r.Logger.Slog())
+	kubeLogger, err := logr.FromContext(logrHandler)
+	if err != nil {
+		panic(err.Error())
+	}
+	log.SetLogger(kubeLogger)
 }
 
 func (m *KubePoolManager) Start() {
@@ -106,7 +113,7 @@ func (m *KubePoolManager) Start() {
 		for {
 			m.Logger.Info("(re)starting node watch")
 			if err := m.startNodeWatch(); err != nil {
-				m.Logger.Warnf("node watcher stopped: %v", err)
+				m.Logger.Warn("node watcher stopped", slog.Any("error", err))
 			}
 
 			if m.Opts.K8s.ReapplyOnWatchTimeout {
@@ -123,17 +130,17 @@ func (m *KubePoolManager) leaderElect() {
 		if m.Opts.Instance.Pod != nil && os.Getenv("POD_NAME") == "" {
 			err := os.Setenv("POD_NAME", *m.Opts.Instance.Pod)
 			if err != nil {
-				m.Logger.Panic(err)
+				m.Logger.Panic(err.Error())
 			}
 		}
 
 		time.Sleep(15 * time.Second)
 		err := leader.Become(m.ctx, m.Opts.Lease.Name)
 		if err != nil {
-			m.Logger.Error(err, "Failed to retry for leader lock")
+			m.Logger.Error("failed to retry for leader lock", slog.Any("error", err))
 			os.Exit(1)
 		}
-		m.Logger.Info("aquired leader lock, continue")
+		m.Logger.Info("acquired leader lock, continue")
 	}
 }
 
@@ -141,7 +148,7 @@ func (m *KubePoolManager) startupApply() {
 	listOpts := metav1.ListOptions{}
 	nodeList, err := m.k8sClient.CoreV1().Nodes().List(m.ctx, listOpts)
 	if err != nil {
-		m.Logger.Panic(err)
+		m.Logger.Panic(err.Error())
 	}
 
 	m.nodePatchStatus = map[string]bool{}
@@ -161,7 +168,7 @@ func (m *KubePoolManager) startNodeWatch() error {
 	}
 	nodeWatcher, err := m.k8sClient.CoreV1().Nodes().Watch(m.ctx, watchOpts)
 	if err != nil {
-		m.Logger.Panic(err)
+		m.Logger.Panic(err.Error())
 	}
 	defer nodeWatcher.Stop()
 
@@ -183,7 +190,7 @@ func (m *KubePoolManager) startNodeWatch() error {
 				delete(m.nodePatchStatus, node.Name)
 			}
 		case watch.Error:
-			m.Logger.Errorf("go watch error event %v", res.Object)
+			m.Logger.Error("go watch error event", slog.Any("error", res.Object))
 		}
 	}
 
@@ -201,46 +208,46 @@ func (m *KubePoolManager) checkNodeCondition(node *corev1.Node) bool {
 }
 
 func (m *KubePoolManager) applyNode(node *corev1.Node) {
-	contextLogger := m.Logger.With(zap.String("node", node.Name))
+	contextLogger := m.Logger.With(slog.String("node", node.Name))
 
 	nodePatchSets := k8s.NewJsonPatchSet()
 	poolNameList := []string{}
 
 	for _, poolConfig := range m.Config.Pools {
 		m.prometheus.nodePoolStatus.WithLabelValues(node.Name, poolConfig.Name).Set(0)
-		poolLogger := contextLogger.With(zap.String("pool", poolConfig.Name))
+		poolLogger := contextLogger.With(slog.String("pool", poolConfig.Name))
 		matching, err := poolConfig.IsMatchingNode(poolLogger, node)
 		if err != nil {
-			poolLogger.Panic(err)
+			poolLogger.Panic(err.Error())
 		}
 
 		if matching {
-			poolLogger.Infof("adding configuration from pool \"%s\" to node \"%s\"", poolConfig.Name, node.Name)
+			poolLogger.Info("adding configuration from pool to node")
 
 			// create json patch
 			patchSet := poolConfig.CreateJsonPatchSet(node)
 			nodePatchSets.AddSet(patchSet)
 			poolNameList = append(poolNameList, poolConfig.Name)
 		} else {
-			poolLogger.Debugf("Node NOT matches pool \"%s\"", poolConfig.Name)
+			poolLogger.Debug("node doesn't matches pool")
 		}
 	}
 
 	// apply patches
-	contextLogger.Infof("applying configuration to node \"%s\"", node.Name)
+	contextLogger.Info("applying configuration to node")
 
 	patchBytes, patchErr := nodePatchSets.Marshal()
 	if patchErr != nil {
-		contextLogger.Errorf("failed to create json patch: %v", patchErr)
+		contextLogger.Error("failed to create json patch", slog.Any("error", patchErr))
 		return
 	}
-	contextLogger.Debugf("apply patchset: %v", string(patchBytes))
+	contextLogger.Debug("apply patchset", slog.Any("patch", string(patchBytes)))
 
 	if !m.Opts.DryRun {
 		// patch node
 		_, k8sError := m.k8sClient.CoreV1().Nodes().Patch(m.ctx, node.Name, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
 		if k8sError != nil {
-			contextLogger.Errorf("failed to apply json patch: %v", k8sError)
+			contextLogger.Error("failed to apply json patch", slog.Any("error", k8sError))
 			return
 		}
 	} else {

@@ -1,13 +1,13 @@
 package config
 
 import (
+	"io"
+	"log/slog"
 	"testing"
 
-	"go.uber.org/zap"
+	"github.com/webdevops/go-common/log/slogger"
 	corev1 "k8s.io/api/core/v1"
 )
-
-var testLogger *zap.SugaredLogger
 
 func stringPtr(val string) *string {
 	return &val
@@ -26,17 +26,8 @@ func buildNode() *corev1.Node {
 	return &node
 }
 
-func logger() *zap.SugaredLogger {
-	if testLogger == nil {
-		logger, err := zap.NewDevelopmentConfig().Build()
-		if err != nil {
-			panic(err)
-		}
-
-		testLogger = logger.Sugar()
-	}
-
-	return testLogger
+func logger() *slogger.Logger {
+	return slogger.New(slog.NewTextHandler(io.Discard, nil))
 }
 
 func Test_NodeMatcher(t *testing.T) {

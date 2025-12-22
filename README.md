@@ -26,25 +26,27 @@ Usage:
   kube-pool-manager [OPTIONS]
 
 Application Options:
-      --debug                    debug mode [$DEBUG]
-  -v, --verbose                  verbose mode [$VERBOSE]
-      --log.json                 Switch log output to json format [$LOG_JSON]
-      --instance.nodename=       Name of node where autopilot is running [$INSTANCE_NODENAME]
-      --instance.namespace=      Name of namespace where autopilot is running [$INSTANCE_NAMESPACE]
-      --instance.pod=            Name of pod where autopilot is running [$INSTANCE_POD]
-      --kube.node.labelselector= Node Label selector which nodes should be checked [$KUBE_NODE_LABELSELECTOR]
-      --kube.watch.timeout=      Timeout & full resync for node watch (time.Duration) (default: 24h) [$KUBE_WATCH_TIMEOUT]
-      --kube.watch.reapply       Reapply node settings on watch timeout [$KUBE_WATCH_REAPPLY]
-      --lease.enable             Enable lease (leader election; enabled by default in docker images) [$LEASE_ENABLE]
-      --lease.name=              Name of lease lock (default: kube-pool-manager-leader) [$LEASE_NAME]
-      --server.bind=             Server address (default: :8080) [$SERVER_BIND]
-      --server.timeout.read=     Server read timeout (default: 5s) [$SERVER_TIMEOUT_READ]
-      --server.timeout.write=    Server write timeout (default: 10s) [$SERVER_TIMEOUT_WRITE]
-      --dry-run                  Dry run (do not apply to nodes) [$DRY_RUN]
-      --config=                  Config path [$CONFIG]
+      --log.level=[trace|debug|info|warning|error] Log level (default: info) [$LOG_LEVEL]
+      --log.format=[logfmt|json]                   Log format (default: logfmt) [$LOG_FORMAT]
+      --log.source=[|short|file|full]              Show source for every log message (useful for debugging and bug reports) [$LOG_SOURCE]
+      --log.color=[|auto|yes|no]                   Enable color for logs [$LOG_COLOR]
+      --log.time                                   Show log time [$LOG_TIME]
+      --instance.nodename=                         Name of node where autopilot is running [$INSTANCE_NODENAME]
+      --instance.namespace=                        Name of namespace where autopilot is running [$INSTANCE_NAMESPACE]
+      --instance.pod=                              Name of pod where autopilot is running [$INSTANCE_POD]
+      --kube.node.labelselector=                   Node Label selector which nodes should be checked [$KUBE_NODE_LABELSELECTOR]
+      --kube.watch.timeout=                        Timeout & full resync for node watch (time.Duration) (default: 24h) [$KUBE_WATCH_TIMEOUT]
+      --kube.watch.reapply                         Reapply node settings on watch timeout [$KUBE_WATCH_REAPPLY]
+      --lease.enable                               Enable lease (leader election; enabled by default in docker images) [$LEASE_ENABLE]
+      --lease.name=                                Name of lease lock (default: kube-pool-manager-leader) [$LEASE_NAME]
+      --server.bind=                               Server address (default: :8080) [$SERVER_BIND]
+      --server.timeout.read=                       Server read timeout (default: 5s) [$SERVER_TIMEOUT_READ]
+      --server.timeout.write=                      Server write timeout (default: 10s) [$SERVER_TIMEOUT_WRITE]
+      --dry-run                                    Dry run (do not apply to nodes) [$DRY_RUN]
+      --config=                                    Config path [$CONFIG]
 
 Help Options:
-  -h, --help                     Show this help message
+  -h, --help                                       Show this help message
 ```
 
 see [example.yaml](/example.yaml) for configuration file
