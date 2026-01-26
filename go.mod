@@ -6,7 +6,7 @@ toolchain go1.25.5
 
 require (
 	github.com/go-logr/logr v1.4.3
-	github.com/goccy/go-yaml v1.19.1
+	github.com/goccy/go-yaml v1.19.2
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus/client_golang v1.23.2
@@ -14,7 +14,7 @@ require (
 	k8s.io/api v0.35.0
 	k8s.io/apimachinery v0.35.0
 	k8s.io/client-go v0.35.0
-	sigs.k8s.io/controller-runtime v0.22.4
+	sigs.k8s.io/controller-runtime v0.23.0
 )
 
 require (
