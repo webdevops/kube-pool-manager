@@ -31,7 +31,7 @@ RUN ["./kube-pool-manager", "--help"]
 # Final
 #############################################
 FROM gcr.io/distroless/static AS final-static
-ENV LOG_JSON=1 \
+ENV LOG_FORMAT=json \
     LEASE_ENABLE=1
 WORKDIR /
 COPY --from=test /app .
