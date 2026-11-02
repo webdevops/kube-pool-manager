@@ -11,9 +11,9 @@ require (
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus/client_golang v1.25.0
 	github.com/webdevops/go-common v0.0.0-20261020182825-f0fa1af415d3
-	k8s.io/api v0.37.1
-	k8s.io/apimachinery v0.37.1
-	k8s.io/client-go v0.37.1
+	k8s.io/api v0.37.2
+	k8s.io/apimachinery v0.37.2
+	k8s.io/client-go v0.37.2
 	sigs.k8s.io/controller-runtime v0.25.2
 )
 
